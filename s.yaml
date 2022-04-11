@@ -1,0 +1,45 @@
+edition: 1.0.0
+name: cdn-backup-source-7xb7
+access: default
+
+vars:
+  region: cn-hangzhou
+  environmentVariables:
+    SOURCE_URL: testmq.cn
+    BUCKET_NAME: ossbucket
+    #WARMUP_DOMAIN: '{{ warmupDomain }}'
+  service:
+    name: cdn-appcenter-service
+    internetAccess: true
+    role: ""
+    logConfig: auto
+  cron: 0 0 0 8 1 1
+
+services:
+  cron_cdn_backup:
+    component: devsapp/fc
+    props:
+      region: ${vars.region}
+      service: ${vars.service}
+      function:
+        environmentVariables: ${vars.environmentVariables}
+        handler: index.handler
+        instanceConcurrency: 1
+        instanceType: e1
+        memorySize: 512
+        runtime: python3
+        timeout: 6000
+        name: cdn-backup-source
+        asyncConfiguration:
+          maxAsyncEventAgeInSeconds: 172800
+          maxAsyncRetryAttempts: 1
+          statefulInvocation: false
+        codeUri: ./code
+      triggers:
+        - name: cron
+          type: timer
+          qualifier: LATEST
+          config:
+            payload: ''
+            cronExpression: 'CRON_TZ=Asia/Shanghai ${vars.cron}'
+            enable: true
